@@ -17,7 +17,7 @@ type Query interface {
 }
 
 type Write interface {
-	Insert(ctx context.Context, tableName string, data any) (string, error)
+	Insert(ctx context.Context, tableName string, data any) error
 	Update(ctx context.Context, tableName string, data any) error
 }
 

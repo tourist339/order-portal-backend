@@ -30,7 +30,7 @@ func (r *Repo) CreateUnit(ctx context.Context, propertyID string, unitIdentifier
 			PropertyID: propertyID,
 			CreatedAt:  time.Now().UTC(),
 		}
-		_, err := r.store.Insert(ctx, TABLE_NAME, u)
+		err := r.store.Insert(ctx, TABLE_NAME, u)
 		return err
 	})
 

@@ -21,7 +21,7 @@ func NewService(repo Repository, tenantService tenant.Interface, propertyService
 	return &Service{repo: repo, tenantService: tenantService, propertyService: propertyService}
 }
 
-func (s *Service) CreateUnit(ctx context.Context, propertyID, unitIdentifier string, tenants ...tenant.Tenant) error {
+func (s *Service) CreateUnit(ctx context.Context, propertyID, unitIdentifier string, tenants ...tenant.TenantUser) error {
 	//Check Property Exists
 	_, err := s.propertyService.GetProperty(ctx, propertyID)
 	if err != nil {
