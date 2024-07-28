@@ -1,6 +1,7 @@
-package tenant
+package roles
 
 import (
+	"backend/internal/user"
 	"context"
 	"fmt"
 )
@@ -16,17 +17,22 @@ type Interface interface {
 }
 
 type Service struct {
-	repo Repository
-	userService
+	repo        Repository
+	userService user.Interface
 }
 
-func NewService(repo Repository) *Service {
-	return &Service{repo: repo}
+func NewService(repo Repository, userService user.Interface) *Service {
+	return &Service{repo: repo, userService: userService}
 }
 
 func (s *Service) CreateTenant(ctx context.Context, tenant *TenantUser, unitID string) (string, error) {
 	//TODO: Validate tenant
-	id, err := s.repo.CreateTenant(ctx, tenant.FirstName, tenant.LastName, tenant.Email, tenant.PhoneNumber, unitID)
+	userID, err := s.userService.CreateUser(ctx, tenant.FirstName, tenant.LastName, tenant.Email, tenant.PhoneNumber)
+	if err != nil {
+		fmt.Println(err)
+		return "", err
+	}
+	id, err := s.repo.CreateTenant(ctx, userID, unitID)
 	if err != nil {
 		fmt.Println(err)
 		return "", err

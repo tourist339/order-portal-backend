@@ -2,26 +2,27 @@ package unit
 
 import (
 	"backend/internal/property"
-	"backend/internal/tenant"
+	"backend/internal/roles"
+	tenant2 "backend/internal/roles/tenant"
 	"context"
 	"fmt"
 )
 
 type Interface interface {
-	CreateUnit(ctx context.Context, unitIdentifier string, propertyID string, tenants ...tenant.Tenant) error
+	CreateUnit(ctx context.Context, unitIdentifier string, propertyID string, tenants ...tenant2.Tenant) error
 }
 
 type Service struct {
 	repo            Repository
-	tenantService   tenant.Interface
+	tenantService   roles.Interface
 	propertyService property.Interface
 }
 
-func NewService(repo Repository, tenantService tenant.Interface, propertyService property.Interface) *Service {
+func NewService(repo Repository, tenantService roles.Interface, propertyService property.Interface) *Service {
 	return &Service{repo: repo, tenantService: tenantService, propertyService: propertyService}
 }
 
-func (s *Service) CreateUnit(ctx context.Context, propertyID, unitIdentifier string, tenants ...tenant.TenantUser) error {
+func (s *Service) CreateUnit(ctx context.Context, propertyID, unitIdentifier string, tenants ...roles.TenantUser) error {
 	//Check Property Exists
 	_, err := s.propertyService.GetProperty(ctx, propertyID)
 	if err != nil {

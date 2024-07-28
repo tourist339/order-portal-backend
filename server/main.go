@@ -4,8 +4,9 @@ import (
 	"backend/internal/company"
 	"backend/internal/model"
 	"backend/internal/property"
-	"backend/internal/tenant"
+	"backend/internal/roles"
 	"backend/internal/unit"
+	"backend/internal/user"
 	"context"
 	"fmt"
 	"github.com/jmoiron/sqlx"
@@ -32,8 +33,10 @@ func main() {
 	ms := model.NewService(db)
 	cr := company.NewRepository(ms)
 	propertyService := property.NewRepository(ms, cr)
-	tenantRepo := tenant.NewRepo(ms)
-	tenantService := tenant.NewService(tenantRepo)
+	tenantRepo := roles.NewRepo(ms)
+	userRepo := user.NewRepo(ms)
+	userService := user.NewService(userRepo)
+	tenantService := roles.NewService(tenantRepo, userService)
 	unitRepo := unit.NewRepo(ms)
 	unitService := unit.NewService(unitRepo, tenantService, propertyService)
 	ctx := context.Background()
@@ -42,7 +45,12 @@ func main() {
 	if err != nil {
 		fmt.Println("Error creating Property", err)
 	}
-	err = unitService.CreateUnit(ctx, "PR-1722060321450632", "7", tenant.Tenant{
+	err = ms.CreateTable(user.TABLE_NAME, &user.User{})
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	err = unitService.CreateUnit(ctx, "PR-1722060321450632", "7", roles.TenantUser{
 		FirstName:   "Kartik",
 		LastName:    "Kapoor",
 		Email:       "kartikkapoor33",

@@ -1,4 +1,4 @@
-package tenant
+package roles
 
 import (
 	"backend/internal/model"
@@ -19,13 +19,12 @@ type Repo struct {
 func NewRepo(model model.Model) *Repo {
 	return &Repo{model: model}
 }
-func (r *Repo) CreateTenant(ctx context.Context, userID, unitID string) (string, error) {
+func (r *Repo) CreateTenant(ctx context.Context, userID string) (string, error) {
 	id := util.GenerateUniqueID("TN")
 	return id, r.model.Transaction(ctx, func(ctx context.Context) error {
-		tenant := &Tenant{
+		tenant := &Role{
 			ID:        id,
 			UserID:    userID,
-			UnitID:    unitID,
 			CreatedAt: time.Now().UTC(),
 		}
 		err := r.model.Insert(ctx, TABLE_NAME, tenant)

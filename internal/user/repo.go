@@ -20,7 +20,7 @@ func NewRepo(model model.Model) *Repo {
 
 func (r *Repo) CreateUser(ctx context.Context, firstName, lastName, email, phoneNumber string) (string, error) {
 	userID := ""
-	r.model.Transaction(ctx, func(ctx context.Context) error {
+	err := r.model.Transaction(ctx, func(ctx context.Context) error {
 		userID = util.GenerateUniqueID("U")
 		u := &User{
 			ID:        userID,
@@ -31,4 +31,8 @@ func (r *Repo) CreateUser(ctx context.Context, firstName, lastName, email, phone
 		}
 		return r.model.Insert(ctx, TABLE_NAME, u)
 	})
+	if err != nil {
+		return "", err
+	}
+	return userID, err
 }
