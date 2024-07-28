@@ -30,7 +30,7 @@ func (repo *Repo) CreateCompany(ctx context.Context, name string) (*Company, err
 
 	err := repo.model.Transaction(ctx, func(ctx context.Context) error {
 		c.CreatedAt = time.Now().UTC()
-		_, err := repo.model.Insert(ctx, "company", c)
+		err := repo.model.Insert(ctx, "company", c)
 		return err
 	})
 	return c, err

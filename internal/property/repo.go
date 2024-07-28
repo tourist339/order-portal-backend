@@ -39,7 +39,7 @@ func (r *Repo) CreateProperty(ctx context.Context, address, owner, companyID str
 			//TeamIDs:   []string{"1abc", "232"},
 			CreatedAt: time.Now().UTC(),
 		}
-		_, err := r.model.Insert(ctx, "property", prop)
+		err := r.model.Insert(ctx, "property", prop)
 		if err != nil {
 			println(err)
 		}

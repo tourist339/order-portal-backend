@@ -12,14 +12,14 @@ type InsertField struct {
 	Value string
 }
 
-func (s *Service) Insert(ctx context.Context, tableName string, entity any) (string, error) {
+func (s *Service) Insert(ctx context.Context, tableName string, entity any) error {
 	tx, err := s.GetTransaction(ctx)
 	if err != nil {
-		return "", err
+		return err
 	}
 	data, _, err := parseDataStruct(entity)
 	if err != nil {
-		return "", err
+		return err
 	}
 	placeholders := make([]string, 0)
 	params := make([]interface{}, len(data))
@@ -37,7 +37,7 @@ func (s *Service) Insert(ctx context.Context, tableName string, entity any) (str
 	tpl := `INSERT INTO {{.TableName}} ({{.Fields}}) VALUES ({{.Placeholders}}) RETURNING id`
 	tmpl, err := template.New("insert").Parse(tpl)
 	if err != nil {
-		return "", err
+		return err
 	}
 
 	// Execute the template with the data
@@ -48,17 +48,17 @@ func (s *Service) Insert(ctx context.Context, tableName string, entity any) (str
 		"Placeholders": strings.Join(placeholders, ", "),
 	})
 	if err != nil {
-		return "", err
+		return err
 	}
 	println(sqlString.String())
 	row := tx.QueryRowContext(ctx, sqlString.String(), params...)
 	if row.Err() != nil {
-		return "", row.Err()
+		return row.Err()
 	}
 	insertID := ""
 	err = row.Scan(&insertID)
 	// Execute the SQL statement
-	return insertID, err
+	return err
 }
 
 const UPDATE_TEMPLATE = `UPDATE {{.TableName}} SET{{.Fields}} WHERE id = {{.IDParamNumber}}`
