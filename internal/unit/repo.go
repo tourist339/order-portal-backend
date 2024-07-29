@@ -9,7 +9,8 @@ import (
 )
 
 type Repository interface {
-	CreateUnit(ctx context.Context, propertyID string, unitIdentifier string) (string, error)
+	CreateUnit(ctx context.Context, propertyID string, unitName string) (string, error)
+	GetUnit(ctx context.Context, propertyID string, unitName string) (*Unit, error)
 	AddTenantToUnit(ctx context.Context, tenantID []string, unitID string) error
 }
 
@@ -21,12 +22,12 @@ func NewRepo(store model.Model) *Repo {
 	return &Repo{store: store}
 }
 
-func (r *Repo) CreateUnit(ctx context.Context, propertyID string, unitIdentifier string) (string, error) {
+func (r *Repo) CreateUnit(ctx context.Context, propertyID string, unitName string) (string, error) {
 	id := util.GenerateUniqueID("UT")
 	err := r.store.Transaction(ctx, func(ctx context.Context) error {
 		u := &Unit{
 			ID:         id,
-			Name:       unitIdentifier,
+			Name:       unitName,
 			PropertyID: propertyID,
 			CreatedAt:  time.Now().UTC(),
 		}
@@ -37,6 +38,29 @@ func (r *Repo) CreateUnit(ctx context.Context, propertyID string, unitIdentifier
 	return id, err
 }
 
+func (r *Repo) GetUnit(ctx context.Context, propertyID string, unitName string) (*Unit, error) {
+	u := &Unit{}
+	err := r.store.Transaction(ctx, func(ctx context.Context) error {
+		return r.store.Get(ctx, &model.SelectQuery{
+			TableName: TABLE_NAME,
+			Fields:    []string{"*"},
+			Where: []model.Condition{
+				{
+					Clause: "property_id",
+					Param:  propertyID,
+				},
+				{
+					Clause: "name",
+					Param:  unitName,
+				},
+			},
+		}, u)
+	})
+	if err != nil {
+		return nil, err
+	}
+	return u, err
+}
 func (r *Repo) AddTenantToUnit(ctx context.Context, tenantIDs []string, unitID string) error {
 	err := r.store.Transaction(ctx, func(ctx context.Context) error {
 		u := &Unit{}

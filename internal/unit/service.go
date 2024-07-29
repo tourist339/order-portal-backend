@@ -1,57 +1,72 @@
 package unit
 
 import (
+	"backend/internal/model"
 	"backend/internal/property"
-	"backend/internal/roles"
-	tenant2 "backend/internal/roles/tenant"
+	"backend/internal/role"
 	"context"
+	"errors"
 	"fmt"
 )
 
+var ErrUnitAlreadyExists = errors.New("unit already exists")
+
 type Interface interface {
-	CreateUnit(ctx context.Context, unitIdentifier string, propertyID string, tenants ...tenant2.Tenant) error
+	CreateUnit(ctx context.Context, unitIdentifier string, propertyID string) (string, error)
+	GetUnit(ctx context.Context, unitIdentifier string, propertyID string) (*Unit, error)
+	GetUnitsByProperty(ctx context.Context, propertID string) ([]*Unit, error)
 }
 
 type Service struct {
 	repo            Repository
-	tenantService   roles.Interface
+	roleService     role.Interface
 	propertyService property.Interface
 }
 
-func NewService(repo Repository, tenantService roles.Interface, propertyService property.Interface) *Service {
-	return &Service{repo: repo, tenantService: tenantService, propertyService: propertyService}
+func NewService(repo Repository, roleService role.Interface, propertyService property.Interface) *Service {
+	return &Service{repo: repo, roleService: roleService, propertyService: propertyService}
 }
 
-func (s *Service) CreateUnit(ctx context.Context, propertyID, unitIdentifier string, tenants ...roles.TenantUser) error {
+func (s *Service) CreateUnit(ctx context.Context, propertyID, unitIdentifier string) (string, error) {
 	//Check Property Exists
 	_, err := s.propertyService.GetProperty(ctx, propertyID)
 	if err != nil {
 		fmt.Println("Error getting Property by", propertyID, err)
-		return err
+		return "", err
+	}
+	u, err := s.repo.GetUnit(ctx, propertyID, unitIdentifier)
+	if err == nil {
+		return u.ID, nil
+	}
+	if !errors.Is(err, model.ErrNotFound) {
+		fmt.Println("Error getting unit", err)
+		return "", err
 	}
 	//Create Unit
 	unitID, err := s.repo.CreateUnit(ctx, propertyID, unitIdentifier)
 	if err != nil {
 		fmt.Println("Error creating unit", err)
-		return err
+		return "", err
 	}
 	//TODO: Create Tenant in goroutines
-	tenantIDs := []string{}
-	for _, t := range tenants {
-		tenantID, err := s.tenantService.CreateTenant(ctx, &t, unitID)
-		if err != nil {
-			fmt.Println("Error creating tenant", err)
-			return err
-		}
-		tenantIDs = append(tenantIDs, tenantID)
+
+	return unitID, nil
+}
+
+func (s *Service) GetUnit(ctx context.Context, propertyID, unitIdentifier string) (*Unit, error) {
+	u, err := s.repo.GetUnit(ctx, propertyID, unitIdentifier)
+	if err != nil {
+		fmt.Println("Error getting unit", err)
+		return nil, err
 	}
-	// Attach Tenants to Unit
-	if len(tenantIDs) > 0 {
-		err = s.repo.AddTenantToUnit(ctx, tenantIDs, unitID)
-		if err != nil {
-			fmt.Println("Error adding tenants to unit", err)
-			return err
-		}
-	}
-	return nil
+	return u, nil
+}
+
+func (s *Service) GetUnitsByProperty(ctx context.Context, propertyID string) ([]*Unit, error) {
+	//units, err := s.repo.GetUnitsByProperty(ctx, propertyID)
+	//if err != nil {
+	//	fmt.Println("Error getting units by property", err)
+	//	return nil, err
+	//}
+	return nil, nil
 }

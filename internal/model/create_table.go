@@ -65,8 +65,6 @@ func (s *Service) CreateTable(tableName string, u any, opts ...Option) error {
 	if err != nil {
 		return err
 	}
-	fmt.Printf("Create Query for table %s: %s\n", tableName, b.String())
-
 	_, err = s.db.Exec(b.String())
 	return err
 }

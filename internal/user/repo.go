@@ -8,6 +8,7 @@ import (
 
 type Repository interface {
 	CreateUser(ctx context.Context, firstName, lastName, email, phoneNumber string) (string, error)
+	GetUserByEmail(ctx context.Context, email string) (*User, error)
 }
 
 type Repo struct {
@@ -16,6 +17,21 @@ type Repo struct {
 
 func NewRepo(model model.Model) *Repo {
 	return &Repo{model: model}
+}
+
+func (r *Repo) GetUserByEmail(ctx context.Context, email string) (*User, error) {
+	u := &User{}
+	err := r.model.Transaction(ctx, func(ctx context.Context) error {
+		return r.model.Get(ctx,
+			&model.SelectQuery{
+				TableName: TABLE_NAME,
+				Fields:    []string{"*"},
+				Where: []model.Condition{
+					{Clause: "email", Param: email},
+				},
+			}, u)
+	})
+	return u, err
 }
 
 func (r *Repo) CreateUser(ctx context.Context, firstName, lastName, email, phoneNumber string) (string, error) {

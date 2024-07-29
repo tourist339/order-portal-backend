@@ -15,8 +15,8 @@ type Interface interface {
 	GetProperty(ctx context.Context, propertyID string) (*Property, error)
 }
 
-func (s *Service) CreateProperty(ctx context.Context, company, address string) error {
-	return s.repo.CreateProperty(ctx, company, address)
+func (s *Service) CreateProperty(ctx context.Context, company, owner, address string) error {
+	return s.repo.CreateProperty(ctx, company, owner, address)
 }
 
 func (s *Service) GetProperty(ctx context.Context, propertyID string) (*Property, error) {

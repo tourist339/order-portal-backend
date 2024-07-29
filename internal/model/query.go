@@ -32,20 +32,16 @@ SELECT {{ range $index, $field := .Fields }}
 {{ end }}
 FROM {{ .TableName }}
 {{ if .Where }}
-WHERE {{ range $index, $condition := .Where }}
-	{{ $condition.Clause }}{{ if not (lastCondition $index $.Where) }} AND {{ end }}
+WHERE {{.Where}}
 {{ end }}
 ;
-{{ else }}
-;
-{{ end }}
 `
 
 func (s *Service) GetByID(ctx context.Context, id, tableName string, fields []string, u any) error {
 	return s.Get(ctx, &SelectQuery{
 		TableName: tableName,
 		Fields:    fields,
-		Where:     []Condition{{Clause: "id=$1", Param: id}},
+		Where:     []Condition{{Clause: "id", Param: id}},
 	}, u)
 }
 
@@ -73,17 +69,7 @@ func (s *Service) getRows(ctx context.Context, q *SelectQuery) (*sqlx.Rows, erro
 	if err != nil {
 		return nil, err
 	}
-	query := &bytes.Buffer{}
-	tmpl := template.Must(template.New("selectQuery").Funcs(template.FuncMap{
-		"lastField": func(index int, fields []string) bool {
-			return index == len(fields)-1
-		},
-		"lastCondition": func(index int, conditions []Condition) bool {
-			return index == len(conditions)-1
-		},
-	}).Parse(selectTemplate))
-
-	err = tmpl.Execute(query, q)
+	query, err := generateSelectQuery(q)
 	if err != nil {
 		return nil, err
 	}
@@ -91,12 +77,40 @@ func (s *Service) getRows(ctx context.Context, q *SelectQuery) (*sqlx.Rows, erro
 	for _, param := range q.Where {
 		params = append(params, param.Param)
 	}
-	fmt.Println(query.String())
-	rows, err := tx.QueryxContext(ctx, query.String(), params...)
+	fmt.Println(query)
+	rows, err := tx.QueryxContext(ctx, query, params...)
 	if err != nil {
 		return nil, err
 	}
 	return rows, nil
+}
+
+func generateSelectQuery(q *SelectQuery) (string, error) {
+	whereClause := ""
+	for i, condition := range q.Where {
+		whereClause += fmt.Sprintf("%s=$%d", condition.Clause, i+1)
+		if i != len(q.Where)-1 {
+			whereClause += " AND "
+		}
+	}
+	query := &bytes.Buffer{}
+	tmpl, err := template.New("selectQuery").Funcs(template.FuncMap{
+		"lastField": func(index int, fields []string) bool {
+			return index == len(fields)-1
+		},
+	}).Parse(selectTemplate)
+	if err != nil {
+		return "", err
+	}
+	err = tmpl.Execute(query, map[string]interface{}{
+		"Fields":    q.Fields,
+		"TableName": q.TableName,
+		"Where":     whereClause,
+	})
+	if err != nil {
+		return "", err
+	}
+	return query.String(), nil
 }
 
 func generateNullTypeStruct(u any) reflect.Type {
