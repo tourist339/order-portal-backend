@@ -4,7 +4,7 @@ import (
 	"backend/internal/company"
 	"backend/internal/model"
 	"backend/internal/property"
-	"backend/internal/roles"
+	"backend/internal/role"
 	"backend/internal/unit"
 	"backend/internal/user"
 	"context"
@@ -32,11 +32,15 @@ func main() {
 
 	ms := model.NewService(db)
 	cr := company.NewRepository(ms)
-	propertyService := property.NewRepository(ms, cr)
-	tenantRepo := roles.NewRepo(ms)
+	createTables(ms)
+
+	propertyRepo := property.NewRepository(ms, cr)
+
+	propertyService := property.NewService(propertyRepo)
+	roleRepo := role.NewRepo(ms)
 	userRepo := user.NewRepo(ms)
 	userService := user.NewService(userRepo)
-	tenantService := roles.NewService(tenantRepo, userService)
+	tenantService := role.NewService(roleRepo, userService)
 	unitRepo := unit.NewRepo(ms)
 	unitService := unit.NewService(unitRepo, tenantService, propertyService)
 	ctx := context.Background()
@@ -45,17 +49,7 @@ func main() {
 	if err != nil {
 		fmt.Println("Error creating Property", err)
 	}
-	err = ms.CreateTable(user.TABLE_NAME, &user.User{})
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	err = unitService.CreateUnit(ctx, "PR-1722060321450632", "7", roles.TenantUser{
-		FirstName:   "Kartik",
-		LastName:    "Kapoor",
-		Email:       "kartikkapoor33",
-		PhoneNumber: "4343",
-	})
+	_, err = unitService.CreateUnit(ctx, "PR-1722218677537813", "7")
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -67,4 +61,17 @@ func main() {
 	//	return
 	//}
 	//fmt.Println("Started Listening on port 8080")
+}
+
+func createTables(ms *model.Service) {
+	tables := map[string]interface{}{
+		user.TABLE_NAME:     &user.User{},
+		role.TABLE_NAME:     &role.Role{},
+		unit.TABLE_NAME:     &unit.Unit{},
+		property.TABLE_NAME: &property.Property{},
+	}
+	for k, v := range tables {
+		_ = ms.CreateTable(k, v)
+	}
+
 }

@@ -15,7 +15,7 @@ type Repo struct {
 	compRepo company.Repository
 }
 type Repository interface {
-	CreateProperty(ctx context.Context, company, address string) error
+	CreateProperty(ctx context.Context, company, owner, address string) error
 	GetProperty(ctx context.Context, propertyId string) (*Property, error)
 }
 
@@ -35,7 +35,7 @@ func (r *Repo) CreateProperty(ctx context.Context, address, owner, companyID str
 			ID:        util.GenerateUniqueID("PR"),
 			CompanyID: companyID,
 			Address:   address,
-			//Owner:     sql.NullString{String: owner},
+			Owner:     owner,
 			//TeamIDs:   []string{"1abc", "232"},
 			CreatedAt: time.Now().UTC(),
 		}

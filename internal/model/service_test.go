@@ -12,14 +12,17 @@ import (
 func TestParseDataStruct(t *testing.T) {
 	t.Run("check array fields", func(t *testing.T) {
 		type c struct {
-			Array []string  `model:"array"`
-			Time  time.Time `model:"time"`
-			K     []string  `model:"k"`
+			Array []string  `db:"array"`
+			ID    string    `db:"id"`
+			Time  time.Time `db:"time"`
+			K     []string  `db:"k"`
 		}
-		k := c{
+		k := &c{
 			Array: []string{"a", "b", "c"},
+			ID:    "fsdfs",
 		}
-		a, err := parseDataStruct(k)
+		a, _, err := parseDataStruct(k)
+		assert.NoError(t, err)
 		val, ok := a["array"]
 		assert.True(t, ok)
 		fmt.Println("val", val)
@@ -68,4 +71,24 @@ func TestGenerateNormalStruct(t *testing.T) {
 	generateNormalStruct(k, d)
 	fmt.Printf("New %v \n", k)
 	fmt.Printf("New A: %s B: %d\n", d.A, d.B)
+}
+
+func TestGenerateSQLString(t *testing.T) {
+	s := &SelectQuery{
+		TableName: "test",
+		Fields:    []string{"a", "b", "c"},
+		Where: []Condition{
+			{
+				Clause: "id",
+				Param:  "U123",
+			},
+			{
+				Clause: "name",
+				Param:  "kk",
+			},
+		},
+	}
+	out, err := generateSelectQuery(s)
+	assert.NoError(t, err)
+	fmt.Println(out)
 }
